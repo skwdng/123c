@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册 - cfeed</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f6f6f6; min-height: 100vh; display: flex; justify-content: center;
+  }
+  .page { width: 100%; max-width: 420px; }
+  .header {
+    background: linear-gradient(135deg, #FF5722, #ffc200);
+    padding: 64px 28px 56px; color: #fff; border-radius: 0 0 28px 28px;
+  }
+  .logo { width: 56px; height: 56px; border-radius: 16px; background: rgba(255,255,255,.25);
+          display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; }
+  .header h1 { margin-top: 14px; font-size: 26px; }
+  .header p { margin-top: 6px; font-size: 13px; opacity: .9; }
+  .card {
+    margin: -28px 20px 0; background: #fff; border-radius: 18px; padding: 26px 22px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08);
+  }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 13px; color: #888; margin-bottom: 7px; }
+  .field label .optional { color: #bbb; font-size: 12px; }
+  .input-wrap { position: relative; }
+  .input-wrap input {
+    width: 100%; padding: 13px 14px; font-size: 15px; border: 1.5px solid #ececec;
+    border-radius: 12px; outline: none; transition: border-color .2s;
+  }
+  .input-wrap input:focus { border-color: #FF5722; }
+  .toggle-eye {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    border: none; background: none; color: #FF5722; font-size: 12px; cursor: pointer; padding: 4px;
+  }
+  .code-row { display: flex; gap: 8px; }
+  .code-row input {
+    flex: 1; padding: 13px 14px; font-size: 15px; border: 1.5px solid #ececec;
+    border-radius: 12px; outline: none; transition: border-color .2s;
+  }
+  .code-row input:focus { border-color: #FF5722; }
+  .btn-code {
+    white-space: nowrap; padding: 0 14px; border: 1.5px solid #FF5722; background: #fff;
+    color: #FF5722; border-radius: 12px; font-size: 13px; cursor: pointer;
+  }
+  .btn-code:disabled { color: #bbb; border-color: #ddd; cursor: not-allowed; }
+  .btn-primary {
+    width: 100%; padding: 14px; border: none; border-radius: 24px; cursor: pointer;
+    background: linear-gradient(135deg, #FF5722, #ff7a45); color: #fff; font-size: 16px; font-weight: 600;
+    margin-top: 6px;
+  }
+  .btn-primary:active { opacity: .85; }
+  .footer { text-align: center; margin-top: 20px; font-size: 14px; color: #888; }
+  .footer a { color: #FF5722; text-decoration: none; font-weight: 600; }
+  .msg { margin-top: 12px; font-size: 13px; text-align: center; min-height: 18px; }
+  .msg.err { color: #e1524a; }
+  .msg.ok { color: #2ea121; }
+  .tip { font-size: 12px; color: #bbb; margin-top: -10px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="logo">C</div>
+    <h1>创建账号</h1>
+    <p>注册即获得唯一 12 位 uid</p>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>手机号</label>
+      <div class="input-wrap">
+        <input id="phone" placeholder="请输入 11 位手机号" maxlength="11" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>短信验证码</label>
+      <div class="code-row">
+        <input id="code" placeholder="请输入 6 位验证码" maxlength="6" inputmode="numeric">
+        <button type="button" id="sendCodeBtn" class="btn-code" onclick="sendCode()">获取验证码</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>密码</label>
+      <div class="input-wrap">
+        <input id="password" type="password" placeholder="请设置密码" autocomplete="new-password">
+        <button type="button" class="toggle-eye" onclick="togglePwd()">显示</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>昵称 <span class="optional">(选填,可与他人重复)</span></label>
+      <div class="input-wrap">
+        <input id="nickname" placeholder="不填则默认使用手机号" maxlength="20">
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="doRegister()">注 册</button>
+    <div id="msg" class="msg"></div>
+
+    <div class="footer">已有账号?<a href="login.html">去登录</a></div>
+  </div>
+</div>
+
+<script>
+function togglePwd() {
+  const input = document.getElementById('password');
+  const btn = document.querySelector('.toggle-eye');
+  if (input.type === 'password') { input.type = 'text'; btn.textContent = '隐藏'; }
+  else { input.type = 'password'; btn.textContent = '显示'; }
+}
+
+function showMsg(text, ok) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+let countdownTimer = null;
+
+function startCountdown() {
+  let left = 60;
+  const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true;
+  btn.textContent = left + 's';
+  countdownTimer = setInterval(() => {
+    left--;
+    if (left <= 0) {
+      clearInterval(countdownTimer);
+      btn.disabled = false;
+      btn.textContent = '获取验证码';
+    } else {
+      btn.textContent = left + 's';
+    }
+  }, 1000);
+}
+
+async function sendCode() {
+  const phone = document.getElementById('phone').value.trim();
+  if (!/^1[3-9]\d{9}$/.test(phone)) { showMsg('请先输入正确的 11 位手机号'); return; }
+  try {
+    const resp = await fetch('/sms/sendCode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, scene: 'register' })
+    });
+    const data = await resp.json();
+    if (data.code === 1) {
+      // 模拟短信:后端把验证码直接返回,自动填入并提示
+      document.getElementById('code').value = data.data;
+      showMsg(`验证码已发送(模拟):${data.data}`, true);
+      startCountdown();
+    } else {
+      showMsg(data.msg || '发送失败');
+    }
+  } catch (e) {
+    showMsg('网络异常,请确认后端已启动');
+  }
+}
+
+async function doRegister() {
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  const code = document.getElementById('code').value.trim();
+  const nickname = document.getElementById('nickname').value.trim();
+  if (!phone || !password || !code) { showMsg('手机号、验证码和密码不能为空'); return; }
+
+  try {
+    const resp = await fetch('/user/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password, code, nickname })
+    });
+    const data = await resp.json();
+    if (data.code === 1) {
+      showMsg('注册成功,即将跳转登录页...', true);
+      // 把手机号带给登录页,自动填入
+      localStorage.setItem('cfeed_prefill_account', phone);
+      setTimeout(() => location.href = 'login.html', 800);
+    } else {
+      showMsg(data.msg || '注册失败');
+    }
+  } catch (e) {
+    showMsg('网络异常,请确认后端已启动(端口9090)');
+  }
+}
+</script>
+</body>
+</html>

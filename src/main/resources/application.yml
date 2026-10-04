@@ -1,0 +1,60 @@
+server:
+  # 本机使用 8080：cpolar website 保留隧道固定转发到 8080，公网域名不变
+  port: 8080
+
+spring:
+  profiles:
+    # 当前激活的环境：dev 本地开发 / prod 生产
+    # 切换方式：改这里，或启动参数 --spring.profiles.active=prod
+    active: dev
+  servlet:
+    multipart:
+      # 上传文件大小限制：视频文件较大，放开到 200MB
+      max-file-size: 200MB
+      max-request-size: 200MB
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+# 健康检查：供 docker-compose / k8s 探活，只暴露 health 端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# 项目自定义配置（各环境通用，放公共文件）
+feed:
+  # 雪花算法：多实例部署时每个实例必须分配不同的 worker-id（0~31）
+  snowflake:
+    worker-id: 1
+    datacenter-id: 1
+  jwt:
+    # JWT 签名密钥
+    secret-key: cfeed_jwt_secret_2026
+    # 有效期：7 天（7*24*60*60*1000）
+    ttl: 604800000
+    # 前端传递令牌的请求头名称
+    token-name: authentication
+  feed:
+    # Redis 全局 Timeline ZSet 的 key
+    timeline-key: "feed:global_timeline"
+    # Timeline 最多保留的热数据条数
+    timeline-max-size: 1000
+    # 视频详情 L2 Redis 缓存前缀与有效期（小时）
+    video-cache-prefix: "feed:video:"
+    video-cache-ttl-hours: 1
+    # 搜索热词 ZSet 的 key（score=搜索次数）
+    hot-keyword-key: "feed:hot_keywords"
+  rabbitmq:
+    # 交换机 / 队列名称集中管理
+    exchange: feed.exchange
+    dlx-exchange: feed.dlx.exchange
+    timeline-queue: feed.timeline.queue
+    like-queue: feed.like.queue
+    comment-queue: feed.comment.queue
+    social-queue: feed.social.queue
+    notification-queue: feed.notification.queue
+    dlx-queue: feed.dlx.queue

@@ -1,0 +1,71 @@
+# ============================================================
+# 一键编排：MySQL + Redis + RabbitMQ + 应用
+# 启动：docker compose up -d
+# 说明：
+#   - mysql 首次启动会自动执行 /docker-entrypoint-initdb.d 下的 init.sql 建库建表
+#   - app 通过环境变量把中间件地址指向容器名（compose 内部 DNS 自动解析）
+# ============================================================
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: cfeed
+    volumes:
+      # 建库建表脚本，仅数据卷首次初始化时执行
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p123456"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7
+    # 项目硬性约束：Redis 必须带密码
+    command: redis-server --requirepass 123456
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      # 管理后台：http://localhost:15672 guest/guest
+      - "15672:15672"
+
+  app:
+    build: .
+    ports:
+      - "9090:9090"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DB: cfeed
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "123456"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "123456"
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+    depends_on:
+      mysql:
+        # 等 MySQL 健康检查通过再启动应用，避免应用先起来连不上库
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+
+volumes:
+  mysql-data:
+  redis-data:

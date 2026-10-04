@@ -1,0 +1,37 @@
+# ===== Maven 编译输出 =====
+target/
+
+# ===== 本地上传的视频文件（体积大，不入库） =====
+uploads/*
+!uploads/.gitkeep
+
+# ===== IDE / 编辑器 =====
+.idea/
+*.iml
+.vscode/
+.mybatis/
+.workbuddy/
+.trae-html-share-packages/
+
+# ===== 临时测试文件 =====
+ta.txt
+tb.txt
+PdfExtract$Stream.class
+
+# ===== 个人学习 / 面试资料（不公开） =====
+学习笔记.md
+完整对话记录.md
+问答记录.md
+面试模拟记录.md
+面试自证清单.md
+面试话术.md
+简历项目描述.html
+feed_project_checklist.pdf
+
+# ===== 日志 =====
+*.log
+logs/
+
+# ===== 系统垃圾文件 =====
+.DS_Store
+Thumbs.db

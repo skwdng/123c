@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 - cfeed</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f6f6f6; min-height: 100vh; display: flex; justify-content: center;
+  }
+  .page { width: 100%; max-width: 420px; }
+  .header {
+    background: linear-gradient(135deg, #FF5722, #ffc200);
+    padding: 64px 28px 56px; color: #fff; border-radius: 0 0 28px 28px;
+  }
+  .logo { width: 56px; height: 56px; border-radius: 16px; background: rgba(255,255,255,.25);
+          display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; }
+  .header h1 { margin-top: 14px; font-size: 26px; }
+  .header p { margin-top: 6px; font-size: 13px; opacity: .9; }
+  .card {
+    margin: -28px 20px 0; background: #fff; border-radius: 18px; padding: 26px 22px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.08);
+  }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 13px; color: #888; margin-bottom: 7px; }
+  .input-wrap { position: relative; }
+  .input-wrap input {
+    width: 100%; padding: 13px 14px; font-size: 15px; border: 1.5px solid #ececec;
+    border-radius: 12px; outline: none; transition: border-color .2s;
+  }
+  .input-wrap input:focus { border-color: #FF5722; }
+  .toggle-eye {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    border: none; background: none; color: #FF5722; font-size: 12px; cursor: pointer; padding: 4px;
+  }
+  .btn-primary {
+    width: 100%; padding: 14px; border: none; border-radius: 24px; cursor: pointer;
+    background: linear-gradient(135deg, #FF5722, #ff7a45); color: #fff; font-size: 16px; font-weight: 600;
+    margin-top: 6px;
+  }
+  .btn-primary:active { opacity: .85; }
+  .footer { text-align: center; margin-top: 20px; font-size: 14px; color: #888; }
+  .footer a { color: #FF5722; text-decoration: none; font-weight: 600; }
+  .msg { margin-top: 12px; font-size: 13px; text-align: center; min-height: 18px; }
+  .msg.err { color: #e1524a; }
+  .msg.ok { color: #2ea121; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="logo">C</div>
+    <h1>欢迎回来</h1>
+    <p>使用手机号或 uid 登录 cfeed</p>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label>账号(手机号 或 12 位 uid)</label>
+      <div class="input-wrap">
+        <input id="account" placeholder="请输入手机号或 uid" autocomplete="username">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>密码</label>
+      <div class="input-wrap">
+        <input id="password" type="password" placeholder="请输入密码" autocomplete="current-password">
+        <button type="button" class="toggle-eye" onclick="togglePwd()">显示</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="doLogin()">登 录</button>
+    <div id="msg" class="msg"></div>
+
+    <div class="footer">还没有账号?<a href="register.html">立即注册</a></div>
+  </div>
+</div>
+
+<script>
+// 注册成功跳来时,自动带上手机号
+const savedAccount = localStorage.getItem('cfeed_prefill_account');
+if (savedAccount) {
+  document.getElementById('account').value = savedAccount;
+  localStorage.removeItem('cfeed_prefill_account');
+}
+
+function togglePwd() {
+  const input = document.getElementById('password');
+  const btn = document.querySelector('.toggle-eye');
+  if (input.type === 'password') { input.type = 'text'; btn.textContent = '隐藏'; }
+  else { input.type = 'password'; btn.textContent = '显示'; }
+}
+
+function showMsg(text, ok) {
+  const el = document.getElementById('msg');
+  el.textContent = text;
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+}
+
+async function doLogin() {
+  const account = document.getElementById('account').value.trim();
+  const password = document.getElementById('password').value;
+  if (!account || !password) { showMsg('账号和密码不能为空'); return; }
+
+  try {
+    const resp = await fetch('/user/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account, password })
+    });
+    const data = await resp.json();
+    if (data.code === 1) {
+      localStorage.setItem('cfeed_token', data.data.token);
+      localStorage.setItem('cfeed_uid', data.data.userId);
+      showMsg('登录成功,正在跳转...', true);
+      setTimeout(() => location.href = 'test.html', 600);
+    } else {
+      showMsg(data.msg || '登录失败');
+    }
+  } catch (e) {
+    showMsg('网络异常,请确认后端已启动(端口9090)');
+  }
+}
+</script>
+</body>
+</html>

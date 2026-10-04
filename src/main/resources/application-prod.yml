@@ -1,0 +1,39 @@
+# ============================================================
+# 生产环境配置：中间件地址全部走环境变量注入，镜像里不写死任何地址
+# 用法示例：docker run -e MYSQL_HOST=10.0.0.5 -e MYSQL_PASSWORD=xxx ...
+# ${VAR:默认值} 语法：环境变量没给时用冒号后的默认值兜底
+# ============================================================
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:cfeed}?useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USER:cfeed}
+    password: ${MYSQL_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: 0
+      password: ${REDIS_PASSWORD:}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 3000ms
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        prefetch: 20
+
+logging:
+  level:
+    # 生产环境只打 info 及以上，减少日志量
+    com.feed: info

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>cfeed 接口测试页</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f0f2f5; color: #333; padding: 16px; }
+  h1 { font-size: 20px; margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: 340px 1fr 360px; gap: 14px; align-items: start; }
+  .card { background: #fff; border-radius: 10px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 14px; }
+  .card h2 { font-size: 15px; margin-bottom: 10px; color: #1a1a1a; border-left: 4px solid #4a7dff; padding-left: 8px; }
+  input, textarea { width: 100%; padding: 7px 9px; margin-bottom: 8px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 13px; }
+  button { padding: 7px 14px; border: none; border-radius: 6px; background: #4a7dff; color: #fff; font-size: 13px; cursor: pointer; margin-right: 6px; margin-bottom: 6px; }
+  button:hover { background: #3a66d8; }
+  button.gray { background: #8a8f99; }
+  button.green { background: #2eb872; }
+  button.red { background: #e25c5c; }
+  button.small { padding: 3px 9px; font-size: 12px; }
+  .hint { font-size: 12px; color: #999; margin-bottom: 8px; word-break: break-all; }
+  .video-item { border: 1px solid #eee; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+  .video-item .title { font-weight: 600; margin-bottom: 4px; }
+  .video-item .meta { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .log { background: #1e1e2e; color: #a6e3a1; font-family: Consolas, monospace; font-size: 12px; border-radius: 6px; padding: 8px; height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+  .log .err { color: #f38ba8; }
+  .log .evt { color: #89b4fa; }
+  .tabs { margin-bottom: 10px; }
+  .tabs button { background: #e8ecf3; color: #333; }
+  .tabs button.active { background: #4a7dff; color: #fff; }
+  .notif-item { border-bottom: 1px solid #f0f0f0; padding: 8px 0; font-size: 13px; }
+  .notif-item .unread { color: #e25c5c; font-weight: 600; }
+  .badge { display: inline-block; background: #e25c5c; color: #fff; border-radius: 10px; padding: 0 7px; font-size: 11px; margin-left: 6px; }
+</style>
+</head>
+<body>
+<h1>cfeed 接口测试页 <span class="hint" style="display:inline">— 打开两个浏览器窗口(一个登录 Alice 一个登录 Bob)即可互测通知推送</span></h1>
+<div class="grid">
+
+  <!-- 左列:账号 + 发布 + SSE -->
+  <div>
+    <div class="card">
+      <h2>1. 注册 <a href="register.html" style="font-size:12px;font-weight:normal;float:right">打开注册页 →</a></h2>
+      <input id="regPhone" placeholder="手机号(11位)">
+      <div style="display:flex;gap:6px">
+        <input id="regCode" placeholder="短信验证码(6位)" style="flex:1">
+        <button style="white-space:nowrap" id="sendCodeBtn" onclick="sendCode()">获取验证码</button>
+      </div>
+      <input id="regPassword" placeholder="设置密码" type="password" value="123456">
+      <input id="regNickname" placeholder="昵称(可空,可重复)">
+      <button onclick="register()">注册</button>
+    </div>
+
+    <div class="card">
+      <h2>2. 登录 <a href="login.html" style="font-size:12px;font-weight:normal;float:right">打开登录页 →</a></h2>
+      <input id="loginAccount" placeholder="uid(12位) 或 手机号(11位)">
+      <input id="loginPassword" placeholder="密码" type="password" value="123456">
+      <button class="green" onclick="login()">登录</button>
+      <button style="background:#e1524a" onclick="cancelAccount()">注销账号</button>
+      <div class="hint" id="whoami">未登录</div>
+    </div>
+
+    <div class="card">
+      <h2>3. 发布内容</h2>
+      <input id="vTitle" placeholder="标题" value="测试视频">
+      <textarea id="vContent" rows="2" placeholder="正文">这是一条测试内容</textarea>
+      <input id="vCover" placeholder="封面URL" value="https://picsum.photos/300/200">
+      <input id="vUrl" placeholder="视频URL" value="https://example.com/v.mp4">
+      <button onclick="publish()">发布</button>
+    </div>
+
+    <div class="card">
+      <h2>4. SSE 实时通知</h2>
+      <button class="green" onclick="connectSSE()">建立 SSE 连接</button>
+      <button class="red" onclick="closeSSE()">断开</button>
+      <span id="sseStatus" class="hint" style="display:inline">未连接</span>
+      <div class="log" id="sseLog" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- 中列:Feed 流 -->
+  <div>
+    <div class="card">
+      <h2>5. Feed 流</h2>
+      <div class="tabs">
+        <button id="tabLatest" class="active" onclick="switchTab('latest')">最新(时间线)</button>
+        <button id="tabLikes" onclick="switchTab('likes')">点赞榜</button>
+      </div>
+      <button class="gray" onclick="loadFeed(true)">刷新</button>
+      <button class="gray" onclick="loadFeed(false)">加载更多</button>
+      <div id="feedList" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- 右列:通知列表 + 请求日志 -->
+  <div>
+    <div class="card">
+      <h2>6. 通知列表 <span id="unreadBadge"></span></h2>
+      <button class="gray small" onclick="loadNotifs(null)">全部</button>
+      <button class="gray small" onclick="loadNotifs(0)">未读</button>
+      <button class="gray small" onclick="loadNotifs(1)">已读</button>
+      <div id="notifList" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>请求日志</h2>
+      <div class="log" id="reqLog"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let token = localStorage.getItem('cfeed_token') || '';
+let userId = localStorage.getItem('cfeed_uid') || '';
+let tab = 'latest';
+let latestCursor = null, likesCountCursor = null, likesIdCursor = null;
+let es = null;
+
+const $ = id => document.getElementById(id);
+
+function logReq(text, isErr) {
+  const el = $('reqLog');
+  const span = document.createElement('span');
+  if (isErr) span.className = 'err';
+  span.textContent = `[${new Date().toLocaleTimeString()}] ${text}\n`;
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+function logSse(text, cls) {
+  const el = $('sseLog');
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = `[${new Date().toLocaleTimeString()}] ${text}\n`;
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function api(method, path, body, needAuth = true) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (needAuth) headers['authentication'] = token;
+  logReq(`${method} ${path}`);
+  try {
+    const resp = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const data = await resp.json();
+    if (data.code !== 1) { logReq(`↳ code=0: ${data.msg}`, true); }
+    return data;
+  } catch (e) {
+    logReq(`↳ 请求异常: ${e.message}`, true);
+    return { code: 0, msg: e.message };
+  }
+}
+
+function updateWhoami() {
+  $('whoami').textContent = token ? `已登录: userId=${userId}, token=${token.slice(0, 25)}...` : '未登录';
+}
+
+async function cancelAccount() {
+  if (!token) { logReq('↳ 请先登录再注销', true); return; }
+  if (!confirm('确定注销账号吗？该操作会删除你的账号记录，不可恢复！')) return;
+  const r = await api('DELETE', '/user');
+  if (r.code === 1) {
+    token = ''; userId = '';
+    localStorage.removeItem('cfeed_token');
+    localStorage.removeItem('cfeed_uid');
+    updateWhoami();
+    logReq('↳ 账号已注销');
+  }
+}
+
+let regCountdown = null;
+function startRegCountdown() {
+  let left = 60;
+  const btn = $('sendCodeBtn');
+  btn.disabled = true; btn.textContent = left + 's';
+  regCountdown = setInterval(() => {
+    left--;
+    if (left <= 0) { clearInterval(regCountdown); btn.disabled = false; btn.textContent = '获取验证码'; }
+    else btn.textContent = left + 's';
+  }, 1000);
+}
+
+async function sendCode() {
+  const phone = $('regPhone').value.trim();
+  if (!/^1[3-9]\d{9}$/.test(phone)) { logReq('↳ 请先输入正确的手机号', true); return; }
+  const r = await api('POST', '/sms/sendCode', { phone, scene: 'register' }, false);
+  if (r.code === 1) {
+    $('regCode').value = r.data;   // 模拟短信:自动填入
+    logReq(`↳ 验证码已发送(模拟): ${r.data}`);
+    startRegCountdown();
+  }
+}
+
+async function register() {
+  const r = await api('POST', '/user/register', {
+    phone: $('regPhone').value, password: $('regPassword').value,
+    code: $('regCode').value, nickname: $('regNickname').value
+  }, false);
+  if (r.code === 1) {
+    logReq('↳ 注册成功,请在登录块用手机号或 uid 登录');
+    // 注册成功后把手机号带到登录框,方便直接登录
+    $('loginAccount').value = $('regPhone').value;
+    $('loginPassword').value = $('regPassword').value;
+  }
+}
+
+async function login() {
+  const r = await api('POST', '/user/login', {
+    account: $('loginAccount').value.trim(), password: $('loginPassword').value
+  }, false);
+  if (r.code === 1) {
+    token = r.data.token; userId = r.data.userId;
+    localStorage.setItem('cfeed_token', token);
+    localStorage.setItem('cfeed_uid', userId);
+    updateWhoami();
+    logReq(`↳ 登录成功: ${r.data.nickname} (uid=${r.data.uid})`);
+    loadFeed(true); loadNotifs(null);
+  }
+}
+
+async function publish() {
+  const r = await api('POST', '/video/publish', {
+    title: $('vTitle').value, content: $('vContent').value,
+    coverUrl: $('vCover').value, videoUrl: $('vUrl').value
+  });
+  if (r.code === 1) { logReq(`↳ 发布成功 videoId=${r.data.videoId}`); setTimeout(() => loadFeed(true), 1500); }
+}
+
+function switchTab(t) {
+  tab = t;
+  $('tabLatest').className = t === 'latest' ? 'active' : '';
+  $('tabLikes').className = t === 'likes' ? 'active' : '';
+  loadFeed(true);
+}
+
+async function loadFeed(reset) {
+  if (reset) { latestCursor = null; likesCountCursor = null; likesIdCursor = null; $('feedList').innerHTML = ''; }
+  let url, r;
+  if (tab === 'latest') {
+    url = '/video/feed/listLatest?limit=5' + (latestCursor ? `&cursor=${latestCursor}` : '');
+    r = await api('GET', url);
+    if (r.code === 1) { latestCursor = r.data.nextCursor; renderFeed(r.data.videos, reset, r.data.hasMore); }
+  } else {
+    url = '/video/feed/listByLikes?limit=5' + (likesIdCursor ? `&lastLikesCount=${likesCountCursor}&lastId=${likesIdCursor}` : '');
+    r = await api('GET', url);
+    if (r.code === 1) { likesCountCursor = r.data.lastLikesCount; likesIdCursor = r.data.lastId; renderFeed(r.data.videos, reset, r.data.hasMore); }
+  }
+}
+
+function renderFeed(videos, reset, hasMore) {
+  const list = $('feedList');
+  if (reset) list.innerHTML = '';
+  if (!videos.length && reset) { list.innerHTML = '<div class="hint">暂无数据</div>'; return; }
+  videos.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'video-item';
+    div.innerHTML = `
+      <div class="title">${v.title} <span class="hint">#${v.id}</span></div>
+      <div class="meta">作者: ${v.authorNickname || ('用户' + v.userId)} | 赞 ${v.likesCount} | 评论 ${v.commentsCount} | ${v.createTime}</div>
+      <div class="hint">${v.content}</div>
+      <button class="small" onclick="doLike(${v.id})">点赞</button>
+      <button class="small gray" onclick="doComment(${v.id})">评论</button>
+      <button class="small green" onclick="doFollow(${v.userId})">关注作者</button>
+      <button class="small red" onclick="doUnfollow(${v.userId})">取关</button>`;
+    list.appendChild(div);
+  });
+  if (!hasMore) { const d = document.createElement('div'); d.className = 'hint'; d.textContent = '— 没有更多了 —'; list.appendChild(d); }
+}
+
+async function doLike(videoId) { const r = await api('POST', `/like/video/${videoId}`); if (r.code === 1) setTimeout(() => loadFeed(true), 1200); }
+async function doComment(videoId) {
+  const content = prompt('评论内容:');
+  if (!content) return;
+  const r = await api('POST', '/comment', { videoId, content });
+  if (r.code === 1) setTimeout(() => loadFeed(true), 1200);
+}
+async function doFollow(uid) { await api('POST', `/follow/${uid}`); }
+async function doUnfollow(uid) { await api('DELETE', `/follow/${uid}`); }
+
+async function loadNotifs(isRead) {
+  const r = await api('GET', '/notification/list?page=1&pageSize=20' + (isRead !== null && isRead !== undefined ? `&isRead=${isRead}` : ''));
+  if (r.code !== 1) return;
+  const list = $('notifList');
+  list.innerHTML = '';
+  const records = r.data.records || [];
+  if (!records.length) { list.innerHTML = '<div class="hint">暂无通知</div>'; }
+  records.forEach(n => {
+    const div = document.createElement('div');
+    div.className = 'notif-item';
+    div.innerHTML = `<span class="${n.isRead === 0 ? 'unread' : ''}">[${n.type}]</span> ${n.fromNickname || ('用户' + n.fromUserId)} ${n.content || ''} <span class="hint">${n.createTime}</span>`;
+    list.appendChild(div);
+  });
+}
+
+function connectSSE() {
+  if (!token) { alert('请先登录'); return; }
+  closeSse();
+  es = new EventSource(`/notification/stream?token=${encodeURIComponent(token)}`);
+  es.addEventListener('connected', () => { $('sseStatus').textContent = '已连接'; logSse('SSE 连接成功', 'evt'); });
+  es.addEventListener('notification', e => {
+    const n = JSON.parse(e.data);
+    logSse(`收到通知: [${n.type}] ${n.content} (来自用户${n.fromUserId})`, 'evt');
+    loadNotifs(null);
+  });
+  es.onerror = () => { $('sseStatus').textContent = '连接断开/出错'; logSse('SSE 连接异常', 'err'); };
+}
+function closeSse() { if (es) { es.close(); es = null; $('sseStatus').textContent = '未连接'; } }
+
+updateWhoami();
+if (token) { loadFeed(true); loadNotifs(null); }
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.feed.server.mapper.VideoMapper">
+
+    <!--
+        冷数据查询：游标为毫秒时间戳，DATETIME 列通过 FROM_UNIXTIME 换算比较，
+        按发布时间倒序，供 FeedService 与 Redis 热数据缝合
+    -->
+    <select id="selectColdVideoIds" resultType="java.lang.Long">
+        SELECT id
+        FROM t_video
+        WHERE deleted = 0
+          AND create_time &lt; FROM_UNIXTIME(#{watermark} / 1000.0)
+        ORDER BY create_time DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
