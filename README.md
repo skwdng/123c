@@ -7,13 +7,12 @@
 - 🖥️ [电脑端演示（36MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-demo.mp4)
 - 📱 [手机端演示（2.2MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-mobile-demo.mp4)
 
-> 视频文件较大，GitHub 网页不支持内嵌播放，已放到 Release 附件，**点击链接即可下载播放**。
 > 完整 Release 页：[v1.0-demo](https://github.com/skwdng/123c/releases/tag/v1.0-demo)。
 > 手机端针对竖屏做了全屏滑动、自适应操作栏等专门适配。
 
 ## ✨ 功能特性
 
-**用户侧**
+**用户端**
 
 - 全屏竖屏刷视频，scroll-snap 一屏一滑，支持双击点赞
 - 视频懒加载，滑出屏幕自动断开下载源，节省带宽
@@ -32,7 +31,7 @@
 - JWT 无状态登录、BCrypt 密码加密、自定义 `@RateLimit` 接口限流
 - MyBatis-Plus 逻辑删除、雪花算法分布式 ID、复合索引优化
 
-## 🧱 技术栈
+##  技术栈
 
 | 分层 | 技术 |
 |------|------|
@@ -47,7 +46,7 @@
 | 工具 | Hutool、Lombok、Maven |
 | 部署 | Docker、docker-compose、多环境 profile |
 
-## 🏗️ 架构设计
+##  架构设计
 
 ```
 浏览器(单文件HTML)
@@ -68,7 +67,7 @@ Controller ── AOP(限流/参数校验/全局异常)
           SSE 推送通知给在线用户；失败消息进死信队列
 ```
 
-## 📁 目录结构
+##  目录结构
 
 ```
 CJAVAfeeds/
@@ -95,54 +94,7 @@ CJAVAfeeds/
 └── pom.xml
 ```
 
-## 🚀 快速开始
-
-### 环境要求
-
-- JDK 17+
-- Maven 3.8+
-- MySQL 8.0
-- Redis（带密码）
-- RabbitMQ
-
-### 1. 初始化数据库
-
-```sql
--- 自动创建 cfeed 库及 7 张表，字符集 utf8mb4
-source init.sql;
-```
-
-### 2. 准备中间件
-
-默认连接本地，配置见 `application-dev.yml`，按实际环境修改：
-
-| 中间件 | 默认地址 | 账号 / 密码 |
-|--------|----------|-------------|
-| MySQL | localhost:3306/cfeed | root / 123456 |
-| Redis | localhost:6379 | 密码 123456 |
-| RabbitMQ | localhost:5672 | guest / guest |
-
-### 3. 启动
-
-```bash
-mvn spring-boot:run
-```
-
-启动成功后：
-
-- 应用首页：http://localhost:8080/123c.html
-- 接口文档：http://localhost:8080/swagger-ui/index.html
-- 健康检查：http://localhost:8080/actuator/health
-
-> 切换生产环境：`java -jar app.jar --spring.profiles.active=prod`，敏感配置通过环境变量注入。
-
-### 4. Docker 部署
-
-```bash
-docker-compose up -d
-```
-
-## 🔑 核心设计说明
+##  核心设计说明
 
 **1. Feed 流三级缓存**
 本地 Caffeine 扛热点读、Redis 做分布式共享、MySQL 兜底；视频详情缓存 1 小时，视频更新 / 删除时主动清除缓存。
@@ -158,8 +110,3 @@ Redis `setIfAbsent` 加锁 + Lua 脚本原子解锁防止并发重复点赞；�
 
 **5. 安全与防护**
 JWT 无状态认证 + BCrypt；自定义 `@RateLimit` 注解 + AOP，基于 Redis 计数器实现接口级频控（如登录 60s/5 次、搜索 60s/30 次）。
-
-## 📝 说明
-
-- 仓库仅包含源码与配置，`uploads/` 视频与编译产物通过 `.gitignore` 排除。
-- 生产环境请通过环境变量覆盖数据库 / Redis / RabbitMQ 密码，勿使用开发默认值。
