@@ -35,3 +35,6 @@ logs/
 # ===== 系统垃圾文件 =====
 .DS_Store
 Thumbs.db
+
+# ===== 演示视频（已移到 GitHub Release 附件）=====
+demo/*.mp4

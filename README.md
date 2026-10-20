@@ -4,10 +4,11 @@
 
 ## 🎬 演示视频
 
-- 🖥️ [电脑端演示（36MB）](demo/123c-demo.mp4)
-- 📱 [手机端演示（2.2MB）](demo/123c-mobile-demo.mp4)
+- 🖥️ [电脑端演示（36MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-demo.mp4)
+- 📱 [手机端演示（2.2MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-mobile-demo.mp4)
 
-> 视频文件较大，**GitHub 上请点右上角 Download 下载后观看**（Gitee 仓库支持在线播放）。
+> 视频文件较大，GitHub 网页不支持内嵌播放，已放到 Release 附件，**点击链接即可下载播放**。
+> 完整 Release 页：[v1.0-demo](https://github.com/skwdng/123c/releases/tag/v1.0-demo)。
 > 手机端针对竖屏做了全屏滑动、自适应操作栏等专门适配。
 
 ## ✨ 功能特性
