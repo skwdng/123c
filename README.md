@@ -2,15 +2,15 @@
 
 一个类抖音的短视频 Web 应用，支持全屏竖屏刷视频、点赞、评论、关注、发布作品、搜索、实时通知等核心功能。后端采用 Spring Boot 三层架构，前端为零依赖单文件 HTML，并已通过内网穿透实现公网多端访问。
 
-## 🎬 演示视频
+##  演示视频
 
-- 🖥️ [电脑端演示（36MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-demo.mp4)
-- 📱 [手机端演示（2.2MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-mobile-demo.mp4)
+-  [电脑端演示（36MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-demo.mp4)
+-  [手机端演示（2.2MB）](https://github.com/skwdng/123c/releases/download/v1.0-demo/123c-mobile-demo.mp4)
 
 > 完整 Release 页：[v1.0-demo](https://github.com/skwdng/123c/releases/tag/v1.0-demo)。
 > 手机端针对竖屏做了全屏滑动、自适应操作栏等专门适配。
 
-## ✨ 功能特性
+##  功能特性
 
 **用户端**
 
